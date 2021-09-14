@@ -1,18 +1,21 @@
 import cron from 'node-cron'
-import { about, weather } from './controller.js'
-import { pushTeletextWeather } from '../service/weather.js'
+import { about, weather, test } from './controller.js'
+import { pushTeletextWeather, pushDummyWeather } from '../service/weather.js'
 
 var taskStatus = 'stopped'
 
-const task = cron.schedule('*/5 * * * *', async () => {
+const task = cron.schedule('* * * * *', async () => {
   console.log('Pushing the weather teletext page...')
-  const teletext = await pushTeletextWeather()
-  console.log(teletext)
+  await pushTeletextWeather()
+  //await pushDummyWeather()
+  //console.log(teletext)
 }, { scheduled: false })
 
 const routes = (app) => {
   app.route('/about').get(about)
   app.route('/api/weather/:type/:city').get(weather)
+
+  app.route('/api/test').get(test)
 
   app.route('/tasks/teletext/start').get((req, res) => {
     task.start()

@@ -17,18 +17,66 @@ const color = (fg, bg = 'black') => {
 
 const isValidLine = (line) => {
   if (!line || line === '') { return false }
-  line.replace(/[²³][0-9a]/g, '')
+  line = line.replace(/[²³][0-9a]/g, '')
   return line.length === 40
 }
 
-const nbsp = (times) => {
-  return new Array(times - 2).join(' ')
+const nbsp = (times, seperator = ' ') => {
+  return new Array(times + 1).join(seperator)
+}
+
+const statusLine = (term, data, seperator = ' ') => {
+  let line = `${color('white')}${term} ${nbsp(40 - term.length - data.length - 2, seperator)} ${data}`
+  return line
+}
+
+const header = (city, country) => {
+  const lines = []
+
+  lines.push(`${color('yellow', 'blue')}${nbsp(40)}`)
+  lines.push(`${color('white', 'blue')} JvPeek TV${nbsp(19)}${color('yellow', 'blue')}DAS WETTER `)
+  lines.push(`${color('white', 'blue')}${nbsp(37 - city.length - country.length)}${city}, ${country} `)
+  lines.push(`${color('yellow', 'blue')}${nbsp(40)}`)
+
+  return lines
+}
+
+const current = (data) => {
+  const lines = []
+
+  lines.push(`${color('white')}${nbsp(40)}`)
+  lines.push(`${color('white')}${nbsp(14)}Temperatur ${nbsp(11 - String(data.current.temp).length, '.')} ${data.current.temp} °C`)
+  lines.push(`${color('white')}${nbsp(14)}Feuchtigkeit ${nbsp(10 - String(data.current.humidity).length, '.')} ${data.current.humidity} %`)
+  lines.push(`${color('white')}${nbsp(14)}Luftdruck ${nbsp(12 - String(data.current.pressure).length, '.')} ${data.current.pressure} mb`)
+  lines.push(`${color('white')}${nbsp(14)}Niederschlag ${nbsp(9 - String(data.current.precipation).length, '.')} ${data.current.precipation} mm`)
+  lines.push(`${color('white')}${nbsp(14)}Wind ${nbsp(15 - String(data.current.wind_speed).length, '.')} ${data.current.wind_speed} km/h`)
+  lines.push(`${color('white')}${nbsp(14)}Windrichtung ${nbsp(12 - data.current.wind_dir.length, '.')} ${data.current.wind_dir}`)
+  lines.push(`${color('white')}${nbsp(40)}`)
+
+  return lines
 }
 
 
+const forecast = (data) => {
+  // forecast part
+}
+
 
 const render = (data) => {
+  const lines = []
+  
+  lines.push(...header(data.city, data.country))
+  lines.push(...current(data))
 
+
+
+  for (let i = lines.length; i < 24; i++) { lines.push(`${color('white')}${nbsp(40)}`) } // remaining lines
+
+  console.log(isValidLine(lines[lines.length - 1]))
+  lines.forEach(line => console.log('"'+line+'"'))
+
+
+  return { lines: lines, title: 'weather' }
 }
 
 export { render }
