@@ -1,6 +1,7 @@
 import axios from 'axios'
 import cron from 'node-cron'
 import chalk from 'chalk'
+import moment from 'moment'
 import { parseForecast } from './weather.js'
 
 // renderer
@@ -57,13 +58,40 @@ const current = (data) => {
   lines.push(`${color('white')}${nbsp(14)}Wind ${nbsp(15 - String(data.current.wind_speed).length, '.')} ${data.current.wind_speed} km/h`)
   lines.push(`${color('white')}${nbsp(14)}Windrichtung ${nbsp(12 - data.current.wind_dir.length, '.')} ${data.current.wind_dir}`)
   lines.push(`${color('white')}${nbsp(40)}`)
-
+  
   return lines
 }
 
 
 const forecast = (data) => {
-  // forecast part
+  const lines = []
+  const parts = {
+    date: '',
+    condition: '',
+    temp_min: '',
+    temp_max: '',
+    rain: ''
+  }
+  
+  data.days.forEach(day => {
+    parts.date += moment(day.date).format('DD.MM.YYYY') + '   '
+    parts.condition += day.condition.text + '  '
+    parts.temp_max += `${color('red')}🌞 ${day.temp_max}°C${nbsp(9 - String(day.temp_max).length)}`
+    parts.temp_min += `${color('blue')}🌙 ${day.temp_min}°C${nbsp(9 - String(day.temp_min).length)}`
+    parts.rain += `${color('white')}🌧 ${day.rain}mm${nbsp(9 - String(day.rain).length)}`
+  })
+
+  lines.push(`${color('white', 'blue')}${nbsp(40)}`)
+  lines.push(`${color('yellow', 'blue')} ${parts.date}`)
+  lines.push(`${color('white', 'blue')}${nbsp(40)}`)
+  lines.push(`${color('white')}${nbsp(40)}`)
+  lines.push(`${parts.temp_max} `)
+  lines.push(`${color('white')}${nbsp(40)}`)
+  lines.push(`${parts.temp_min} `)
+  lines.push(`${color('white')}${nbsp(40)}`)
+  lines.push(`${parts.rain} `)
+  
+  return lines
 }
 
 const status = (data) => {
@@ -77,11 +105,14 @@ const render = (data) => {
   
   lines.push(...header(data.city, data.country))
   lines.push(...current(data))
+  lines.push(...forecast(data))
 
-  for (let i = lines.length; i < 24; i++) { lines.push(`${color('white')}${nbsp(40)}`) } // remaining lines
+  for (let i = lines.length; i < 23; i++) { lines.push(`${color('white')}${nbsp(40)}`) } // remaining lines - 1
+
+  lines.push(`${color('yellow', 'blue')}${nbsp(29)}MUSIKUSS78 `)
 
   //console.log(isValidLine(lines[lines.length - 1]))
-  //lines.forEach(line => console.log('"'+line+'"'))
+  lines.forEach(line => console.log('"'+line+'"'))
 
   return { lines: lines, title: 'weather' }
 }
