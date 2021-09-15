@@ -1,4 +1,9 @@
+import axios from 'axios'
+import cron from 'node-cron'
+import chalk from 'chalk'
+import { parseForecast } from './weather.js'
 
+// renderer
 
 const headerLines = [
   "²7³1               ³0 ²8³3                        ",
@@ -61,6 +66,11 @@ const forecast = (data) => {
   // forecast part
 }
 
+const status = (data) => {
+
+  console.log(chalk.blue(`${data.city}, ${data.country}`), chalk.green('T:'), data.current.temp + ' °C', chalk.green('H:'), data.current.humidity + ' %', chalk.green('P:'), data.current.pressure + ' mb')
+}
+
 
 const render = (data) => {
   const lines = []
@@ -68,15 +78,53 @@ const render = (data) => {
   lines.push(...header(data.city, data.country))
   lines.push(...current(data))
 
-
-
   for (let i = lines.length; i < 24; i++) { lines.push(`${color('white')}${nbsp(40)}`) } // remaining lines
 
-  console.log(isValidLine(lines[lines.length - 1]))
-  lines.forEach(line => console.log('"'+line+'"'))
-
+  //console.log(isValidLine(lines[lines.length - 1]))
+  //lines.forEach(line => console.log('"'+line+'"'))
 
   return { lines: lines, title: 'weather' }
 }
 
-export { render }
+
+/**
+ * Gets the weather and renders it to a JVPeek teletext page
+ */
+const teletext = async () => {
+
+  const baseURL = process.env.WEATHER_BASE_URL
+  const apikey = process.env.WEATHER_API_KEY
+  const location = process.env.WEATHER_LOCATION
+  const weather_uri = `${baseURL}forecast.json?key=${apikey}&q=${location}&days=3&lang=de`
+  const teletext_uri = process.env.TELETEXT_URL
+  let rendered
+
+  try {
+    const weather = await axios.get(weather_uri)
+    const parsed = parseForecast(weather.data)
+    rendered = render(parsed)
+    status(parsed)
+  } catch (e) {
+    console.error(e)
+  }
+
+  if (rendered) {
+    try {
+      const res = await axios.post(teletext_uri, rendered, { params: { format: 'json' }})
+      //console.log(res.data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+/**
+ * Sets up a cron schedule for the Service to push automatically
+ */
+const teletextTask = cron.schedule('* * * * *', async () => {
+  console.log('Pushing the weather teletext page...')
+  await teletext()
+}, { scheduled: false })
+
+
+export { teletext, teletextTask }
