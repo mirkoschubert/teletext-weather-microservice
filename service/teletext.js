@@ -80,15 +80,62 @@ const nbsp = (times, seperator = ' ') => {
 
 
 /**
- * Renders the status line for the logs
+ * Calculates the condition text for multiple lines
  * 
- * @param {String} term 
- * @param {Object} data 
- * @param {String} seperator 
- * @returns {String}
+ * @param {String} text 
+ * @returns {Array<String>}
  */
-const statusLine = (term, data, seperator = ' ') => {
-  return `${color('white')}${term} ${nbsp(40 - term.length - data.length - 2, seperator)} ${data}`
+const condition = (text) => {
+  const condition = []
+  if (text.length > 10) {
+    const words = text.split(' ')
+    let part = ''
+    words.forEach((word, i) => {
+      if (part.length + word.length <= 10) {
+        part += word
+      } else {
+        condition.push(part)
+        part = ''
+      }
+      if (part === '' && i === words.length - 1) {
+        part += word
+        condition.push(part)
+      }
+    })
+  } else {
+    condition.push(text)
+  }
+  return condition
+}
+
+
+/**
+ * Helper function to check if any of the next days have snow
+ * @param {Object} data 
+ * @returns {Boolean}
+ */
+const hasSnow = (data) => {
+  data.days.forEach(day => {
+    if (day.snow > 0) {
+      return true
+    }
+  })
+  return false
+}
+
+
+/**
+ * Helper function to check if any of the next days have rain
+ * @param {Object} data 
+ * @returns {Boolean}
+ */
+const hasRain = (data) => {
+  data.days.forEach(day => {
+    if (day.rain > 0) {
+      return true
+    }
+  })
+  return false
 }
 
 
@@ -119,13 +166,15 @@ const header = (city, country) => {
  */
 const current = (data) => {
   const lines = []
+  const cond = condition(data.current.condition.text)
 
+  //console.log(cond)
   lines.push(`${color('white')}${nbsp(40)}`)
-  lines.push(`${color('white')}${nbsp(14)}Temperatur ${nbsp(11 - String(data.current.temp).length, '.')} ${data.current.temp} °C`)
-  lines.push(`${color('white')}${nbsp(14)}Feuchtigkeit ${nbsp(10 - String(data.current.humidity).length, '.')} ${data.current.humidity} %`)
-  lines.push(`${color('white')}${nbsp(14)}Luftdruck ${nbsp(12 - String(data.current.pressure).length, '.')} ${data.current.pressure} mb`)
+  lines.push(`${color('red')} ${cond[0] ? cond[0] : ''}${nbsp(cond[0] ? 13 - cond[0].length : 13)}${color('white')}Temperatur ${nbsp(11 - String(data.current.temp).length, '.')} ${data.current.temp} °C`)
+  lines.push(`${color('red')} ${cond[1] ? cond[1] : ''}${nbsp(cond[1] ? 13 - cond[1].length : 13)}${color('white')}Feuchtigkeit ${nbsp(10 - String(data.current.humidity).length, '.')} ${data.current.humidity} %`)
+  lines.push(`${color('red')} ${cond[2] ? cond[2] : ''}${nbsp(cond[2] ? 13 - cond[2].length : 13)}${color('white')}Luftdruck ${nbsp(12 - String(data.current.pressure).length, '.')} ${data.current.pressure} mb`)
   lines.push(`${color('white')}${nbsp(14)}Niederschlag ${nbsp(9 - String(data.current.precipation).length, '.')} ${data.current.precipation} mm`)
-  lines.push(`${color('white')}${nbsp(14)}Wind ${nbsp(15 - String(data.current.wind_speed).length, '.')} ${data.current.wind_speed} km/h`)
+  lines.push(`${color('white')}${nbsp(14)}Wind ${nbsp(16 - String(data.current.wind_speed).length, '.')} ${data.current.wind_speed} kmh`)
   lines.push(`${color('white')}${nbsp(14)}Windrichtung ${nbsp(12 - data.current.wind_dir.length, '.')} ${data.current.wind_dir}`)
   lines.push(`${color('white')}${nbsp(40)}`)
   
@@ -146,26 +195,33 @@ const forecast = (data) => {
     condition: '',
     temp_min: '',
     temp_max: '',
-    rain: ''
+    wind: '',
+    rain: '',
+    snow: '',
+    uv: ''
   }
-  
+
   data.days.forEach(day => {
     parts.date += moment(day.date).format('DD.MM.YYYY') + '   '
     parts.condition += day.condition.text + '  '
-    parts.temp_max += `${color('red')}🌞 ${day.temp_max}°C${nbsp(9 - String(day.temp_max).length)}`
-    parts.temp_min += `${color('blue')}🌙 ${day.temp_min}°C${nbsp(9 - String(day.temp_min).length)}`
-    parts.rain += `${color('white')}🌧 ${day.rain}mm${nbsp(9 - String(day.rain).length)}`
+    parts.temp_max += `${color('red')}${day.temp_max}°C${nbsp(7 - String(day.temp_max).length)}`
+    parts.temp_min += `${color('blue')}${day.temp_min}°C${nbsp(7 - String(day.temp_min).length)}`
+    parts.wind += `${color('magenta')}${day.wind}kmh${nbsp(6 - String(day.wind).length)}`
+    parts.rain += `${color('cyan')}${day.rain}mm${nbsp(7 - String(day.rain).length)}`
+    parts.snow += `${color('white')}${day.snow}mm${nbsp(7 - String(day.snow).length)}`
+    parts.uv += `${color('purple')}${day.uv}${nbsp(9 - String(day.uv).length)}`
   })
 
   lines.push(`${color('white', 'blue')}${nbsp(40)}`)
-  lines.push(`${color('yellow', 'blue')} ${parts.date}`)
+  lines.push(`${color('yellow', 'blue')}${nbsp(11)}Heute${nbsp(4)}Morgen${nbsp(3)}Übermorgen `)
   lines.push(`${color('white', 'blue')}${nbsp(40)}`)
   lines.push(`${color('white')}${nbsp(40)}`)
-  lines.push(`${parts.temp_max} `)
-  lines.push(`${color('white')}${nbsp(40)}`)
-  lines.push(`${parts.temp_min} `)
-  lines.push(`${color('white')}${nbsp(40)}`)
-  lines.push(`${parts.rain} `)
+  lines.push(`${color('white')} Tag${nbsp(7)}${parts.temp_max}${nbsp(2)}`)
+  lines.push(`${color('white')} Nacht${nbsp(5)}${parts.temp_min}${nbsp(2)}`)
+  lines.push(`${color('white')} Wind${nbsp(6)}${parts.wind}${nbsp(2)}`)
+  lines.push(`${color('white')} Regen${nbsp(5)}${parts.rain}${nbsp(2)}`)
+  lines.push(`${color('white')} Schnee${nbsp(4)}${parts.snow}${nbsp(2)}`)
+  lines.push(`${color('white')} UV${nbsp(8)}${parts.uv}${nbsp(2)}`)
   
   return lines
 }
@@ -201,8 +257,7 @@ const render = (data) => {
 
   lines.push(`${color('yellow', 'blue')}${nbsp(29)}MUSIKUSS78 `)
 
-  //console.log(isValidLine(lines[lines.length - 1]))
-  lines.forEach(line => console.log('"'+line+'"'))
+  //lines.forEach(line => console.log('"'+line+'"'))
 
   if (isValid(lines)) {
     return { lines: lines, title: 'weather' }
@@ -234,7 +289,6 @@ const teletext = async () => {
   if (rendered) {
     try {
       const res = await axios.post(teletext_uri, rendered, { params: { format: 'json' }})
-      //console.log(res.data)
     } catch (e) {
       console.error(e)
     }

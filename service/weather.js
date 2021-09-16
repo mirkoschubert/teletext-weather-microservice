@@ -14,8 +14,10 @@ const parseForecast = (data) => {
       date: day.date,
       temp_max: day.day.maxtemp_c,
       temp_min: day.day.mintemp_c,
+      wind: day.day.maxwind_kph,
       rain: day.day.daily_chance_of_rain,
       snow: day.day.daily_chance_of_snow,
+      uv: day.day.uv,
       condition: {
         text: day.day.condition.text,
         code: day.day.condition.code
@@ -83,7 +85,7 @@ const forecast = async (req, res, next) => {
   
   try {
     const weather = await axios.get(uri)
-    //console.log(parseForecast(weather.data))
+    //console.log(weather.data.forecast.forecastday)
     res.send(parseForecast(weather.data))
   } catch (e) {
     console.error(e)
