@@ -1,5 +1,12 @@
 import axios from 'axios'
 
+/**
+ * Parses the forecast weather object from weatherapi.com
+ * and creates a reduced object with the needed data
+ * 
+ * @param {Object} data 
+ * @returns {Object}
+ */
 const parseForecast = (data) => {
   const days = []
   data.forecast.forecastday.forEach(day => {
@@ -15,7 +22,6 @@ const parseForecast = (data) => {
       }
     })
   })
-
   return {
     city: data.location.name,
     country: data.location.country,
@@ -35,6 +41,14 @@ const parseForecast = (data) => {
   }
 }
 
+
+/**
+ * Parses the current weather data from weatherapi.com
+ * and creates a reduced object 
+ * 
+ * @param {Object} data 
+ * @returns {Object}
+ */
 const parseCurrent = (data) => {
   return {
     city: data.location.name,
@@ -52,6 +66,14 @@ const parseCurrent = (data) => {
   }
 }
 
+
+/**
+ * Gets the forcast weather data from weatherapi.com
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @param {Object} next 
+ */
 const forecast = async (req, res, next) => {
   
   const baseURL = process.env.WEATHER_BASE_URL
@@ -61,13 +83,20 @@ const forecast = async (req, res, next) => {
   
   try {
     const weather = await axios.get(uri)
-    console.log(parseForecast(weather.data))
+    //console.log(parseForecast(weather.data))
     res.send(parseForecast(weather.data))
   } catch (e) {
     console.error(e)
   }
 }
 
+/**
+ * Gets the current weather data from weatherapi.com
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
+ * @param {Object} next 
+ */
 const current = async (req, res, next) => {
 
   const baseURL = process.env.WEATHER_BASE_URL
