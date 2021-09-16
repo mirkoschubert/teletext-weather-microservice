@@ -1,4 +1,5 @@
 import axios from 'axios'
+import logger from 'signale'
 
 /**
  * Parses the forecast weather object from weatherapi.com
@@ -85,10 +86,10 @@ const forecast = async (req, res, next) => {
   
   try {
     const weather = await axios.get(uri)
-    //console.log(weather.data.forecast.forecastday)
+    if (process.env.NODE_ENV !== 'production') logger.debug(weather.data.forecast.forecastday)
     res.send(parseForecast(weather.data))
   } catch (e) {
-    console.error(e)
+    logger.error(e.message)
   }
 }
 
@@ -108,10 +109,10 @@ const current = async (req, res, next) => {
 
   try {
     const weather = await axios.get(uri)
-    console.log(parseCurrent(weather.data))
+    if (process.env.NODE_ENV !== 'production') logger.debug(parseCurrent(weather.data))
     res.send(parseCurrent(weather.data))
   } catch (e) {
-    console.error(e)
+    logger.error(e.message)
   }
 
 }

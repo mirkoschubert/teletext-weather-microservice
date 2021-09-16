@@ -2,6 +2,7 @@ import axios from 'axios'
 import cron from 'node-cron'
 import chalk from 'chalk'
 import moment from 'moment'
+import logger from 'signale'
 import { parseForecast } from './weather.js'
 
 // old
@@ -56,11 +57,11 @@ const isValid = (lines) => {
     if (!lineValid) { invalid.push(i + 1) }
   })
   if (invalid.length > 0) {
-    console.error('Line', invalid.join(', '), 'are invalid. Please check the character count!')
+    logger.error('Line', invalid.join(', '), 'are invalid. Please check the character count!')
     valid = false
   }
   if (lines.length !== 24) {
-    console.error('There are not the right amount of lines.')
+    logger.error('There are not the right amount of lines.')
     valid = false
   }
   return valid
@@ -168,7 +169,7 @@ const current = (data) => {
   const lines = []
   const cond = condition(data.current.condition.text)
 
-  //console.log(cond)
+  if (process.env.NODE_ENV !== 'production') logger.debug(cond)
   lines.push(`${color('white')}${nbsp(40)}`)
   lines.push(`${color('red')} ${cond[0] ? cond[0] : ''}${nbsp(cond[0] ? 13 - cond[0].length : 13)}${color('white')}Temperatur ${nbsp(11 - String(data.current.temp).length, '.')} ${data.current.temp} °C`)
   lines.push(`${color('red')} ${cond[1] ? cond[1] : ''}${nbsp(cond[1] ? 13 - cond[1].length : 13)}${color('white')}Feuchtigkeit ${nbsp(10 - String(data.current.humidity).length, '.')} ${data.current.humidity} %`)
@@ -236,7 +237,7 @@ const status = (data) => {
   const location = chalk.blue(`${data.city}, ${data.country}`)
   const basic = ` ${chalk.green('T:')} ${data.current.temp} °C ${chalk.green('H:')} ${data.current.humidity} % ${chalk.green('P:')} ${data.current.pressure} mb`
   const advanced = ` ${chalk.green('W:')} ${data.current.wind_speed} kmh ${data.current.wind_dir} ${chalk.green('P:')} ${data.current.precipation} mm`
-  console.log(location + basic + advanced)
+  logger.success(location + basic + advanced)
 }
 
 
@@ -254,10 +255,9 @@ const render = (data) => {
   lines.push(...forecast(data))
 
   for (let i = lines.length; i < 23; i++) { lines.push(`${color('white')}${nbsp(40)}`) } // remaining lines - 1
-
   lines.push(`${color('yellow', 'blue')}${nbsp(29)}MUSIKUSS78 `)
 
-  //lines.forEach(line => console.log('"'+line+'"'))
+  if (process.env.NODE_ENV !== 'production') lines.forEach(line => logger.debug('"'+line+'"'))
 
   if (isValid(lines)) {
     return { lines: lines, title: 'weather' }
@@ -284,16 +284,16 @@ const teletext = async () => {
     rendered = render(parsed)
     status(parsed)
   } catch (e) {
-    console.error(e)
+    logger.error(e.message)
   }
   if (rendered) {
     try {
       const res = await axios.post(teletext_uri, rendered, { params: { format: 'json' }})
     } catch (e) {
-      console.error(e)
+      logger.error(e.message)
     }
   } else {
-    console.error('Teletext page was not pushed because of errors')
+    logger.error('Teletext page was not pushed because of errors')
   }
 }
 
@@ -302,7 +302,7 @@ const teletext = async () => {
  * Sets up a cron schedule for the Service to push automatically
  */
 const teletextTask = cron.schedule('* * * * *', async () => {
-  console.log('Pushing the weather teletext page...')
+  logger.await('Pushing the weather teletext page...')
   await teletext()
 }, { scheduled: false })
 

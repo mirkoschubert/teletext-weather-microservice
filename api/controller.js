@@ -1,9 +1,11 @@
 import { readFile } from 'fs/promises'
 import { current, forecast } from '../service/weather.js'
 import { teletextTask } from '../service/teletext.js'
+import logger from 'signale'
 
 const pkg = JSON.parse(await readFile('./package.json', 'utf-8'))
 
+var taskStatus = 'stopped'
 
 /**
  * Responses with some data about the service
@@ -26,25 +28,24 @@ const about = (req, res) => {
  * @param {Object} res 
  */
 const weather = async (req, res) => {
-
+  
   if (req.params.type === 'current') {
     try {
       const data = await current(req, res)
       res.json(data)      
     } catch (e) {
-      console.error(e)
+      logger.error(e.message)
     }
   } else if (req.params.type === 'forecast') {
     try {      
       const data = await forecast(req, res)
       res.json(data)
     } catch (e) {
-      console.log(e)
+      logger.error(e.message)
     }
   } else {
     res.status(404).send({ error: 'No Access' })
   }
-
 }
 
 
@@ -56,19 +57,23 @@ const weather = async (req, res) => {
  * @param {Object} res 
  */
 const teletext = async (req, res) => {
-  let status = 'stopped'
+  
 
   if (req.method === 'GET' && req.params.command === 'status') {
-    res.json({ service: 'teletext', status: status })
+    logger.info('The status of the Teletext Service was checked.')
+    res.json({ service: 'teletext', status: taskStatus })
   } else if (req.method === 'POST' && req.params.command === 'start') {
+    taskStatus = 'active'
     teletextTask.start()
-    status = 'active'
-    res.json({ service: 'teletext', status: status })
+    logger.success('The Teletext Service was successfully started.')
+    res.json({ service: 'teletext', status: taskStatus })
   } else if (req.method === 'POST' && req.params.command === 'stop') {
+    taskStatus = 'stopped'
     teletextTask.stop()
-    status = 'stopped'
-    res.json({ service: 'teletext', status: status })
+    logger.success('The Teletext Service was successfully stopped.')
+    res.json({ service: 'teletext', status: taskStatus })
   } else {
+    logger.warn('Someone tried to push data to an unauthorized route.')
     res.status(404).send({ error: 'No Access' })
   }
 }

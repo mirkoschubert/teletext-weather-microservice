@@ -4,6 +4,8 @@
   "description": "A Microservice to build a weather teletext page for JVPeek Teletext",
   "main": "server.js",
   "scripts": {
+    "start": "NODE_ENV=production node server.js",
+    "dev": "NODE_ENV=development node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,13 +14,13 @@
   "dependencies": {
     "axios": "^0.21.4",
     "chalk": "^4.1.2",
+    "compression": "^1.7.4",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "express-pino-logger": "^6.0.0",
     "moment": "^2.29.1",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.0",
-    "theweatherapi": "^1.1.3"
+    "signale": "^1.4.0"
   },
   "type": "module"
 }
